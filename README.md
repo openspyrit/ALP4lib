@@ -97,3 +97,37 @@ DMD.FreeSeq()
 # De-allocate the device
 DMD.Free()
 ``` 
+
+
+## Example with external trigger
+The DMD can be also triggered with an external trigger cable. The following code initializes the DMD
+to do so:
+```python
+from ALP4 import *
+dmd = ALP4(version = '4.3')
+
+# Initialize the device
+dmd.Initialize()
+
+# grayscale imagee
+imgBlack = np.zeros([DMD.nSizeY,DMD.nSizeX])
+imgWhite = np.ones([DMD.nSizeY,DMD.nSizeX])*(2**8-1)
+imgSeq  = np.concatenate([imgBlack.ravel(),imgWhite.ravel()])
+
+
+dmd.SeqAlloc(nbImg = imgSeq.shape[0], bitDepth = 8)
+
+# Send the image sequence as a 1D list/array/numpy array
+dmd.SeqPut(imgData = imgSeq)
+
+# set to 50Hz
+# subtract 10µs because if the pictureTime is roughly the same time
+# as the time between two triggers, sometime some triggers are missed  
+dmd.SetTiming(pictureTime = round(0.05*1_000_000) - 10)
+
+# DMD listens to trigger
+dmd.ProjControl(ALP_PROJ_MODE, ALP_SLAVE)
+
+dmd.Run()
+# best case start the triggers after, otherwise there might be a small delay
+```
